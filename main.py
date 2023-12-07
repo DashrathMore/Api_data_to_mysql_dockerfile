@@ -1,33 +1,16 @@
-import mysql.connector
 import yaml
-from call_api import read_api
+from call_api import read_api, mysql_config
 
 # getting data from call_api
 def get_data():
     articles = read_api()
-    return articles
-
-
-
-# Read api key and Mysql connection from env.yml
-def connector_with_mysql():
-    with open('env.yml','r') as file:
-        conf = yaml.safe_load(file)
-
-    
-    mysql_conf = {
-        'host' : conf.get('mysql_host'),
-        'user' : conf.get('mysql_user'),
-        'password' : conf.get('mysql_password'),
-        'database' : conf.get('mysql_database')
-    }
-    
-    connection = mysql.connector.connect(**mysql_conf)
-    return connection
-
+    mysql_dict = mysql_config()
+    connection = mysql_dict['connection']
+    cursor = mysql_dict['cursor']
+    return {'articles':articles, 'connection':connection, 'cursor':cursor}
 
  # function is responsiable for create a table and load data into table
-def append_table():
+def table_operation():
     #   CREATING TABLE IF IT NOT EXISTS
     create_table ="""
     CREATE TABLE IF NOT EXISTS articles(
@@ -42,6 +25,8 @@ def append_table():
         content TEXT
         )"""
     cursor.execute(create_table)
+
+    
     #inserting data into table
     for article in articles:
 
@@ -63,14 +48,11 @@ def append_table():
 
 
 #getting data through get_data function
-articles = get_data()
-
-
-# calling connector and getting cursor #
-connection = connector_with_mysql()
-# getting cursor 
-cursor = connection.cursor()
+get_dict = get_data()
+articles = get_dict['articles']
+connection = get_dict['connection']
+cursor = get_dict['cursor']
 
 # adding data into table
 
-add = append_table()
+add = table_operation()
